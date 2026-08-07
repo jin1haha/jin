@@ -53,12 +53,17 @@
 
     <!-- WEEK -->
     <section id="view-week" class="view">
-      <div class="day-tabs" id="dayTabs"></div>
+      <div class="day-nav">
+        <button id="prevDayBtn" aria-label="Previous day">‹</button>
+        <div class="day-tabs" id="dayTabs"></div>
+        <button id="nextDayBtn" aria-label="Next day">›</button>
+      </div>
       <div id="weekClasses" class="entry-list"></div>
     </section>
 
     <!-- TASKS -->
     <section id="view-tasks" class="view">
+      <input type="text" id="taskSearchInput" class="task-search" placeholder="Search tasks...">
       <div class="task-filters" id="taskFilters">
         <button class="filter active" data-filter="open">Open</button>
         <button class="filter" data-filter="done">Done</button>
@@ -145,6 +150,7 @@
       <input type="hidden" id="classIdInput">
       <div class="modal-actions">
         <button type="button" class="btn-ghost" id="deleteClassBtn" style="display:none;">Delete</button>
+        <button type="button" class="btn-ghost" id="duplicateClassBtn" style="display:none;">Duplicate</button>
         <button type="submit" class="btn-primary">Save class</button>
       </div>
     </form>

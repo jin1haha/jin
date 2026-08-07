@@ -12,16 +12,16 @@ const SEED_CLASSES = [
   { id:'seed-fil',     name:'Filipino 1',               room:'Ms. Shicka',    start:'16:10', end:'16:50', days:[2,3,4,5], color:'#5B7FBF' },
   { id:'seed-gsci-a',  name:'General Science',          room:'Mr. Miguel',    start:'16:50', end:'17:30', days:[2,5,6],   color:'#C1443A' },
   { id:'seed-gsci-b',  name:'General Science',          room:'Mr. Miguel',    start:'18:25', end:'19:05', days:[3],       color:'#C1443A' },
-  { id:'seed-gmath-a', name:'General Mathematics',      room:'Mr. Meñez',     start:'16:50', end:'17:30', days:[3,4],     color:'#9A6BBF' },
-  { id:'seed-gmath-b', name:'General Mathematics',      room:'Mr. Meñez',     start:'18:25', end:'19:05', days:[2],       color:'#9A6BBF' },
-  { id:'seed-gmath-c', name:'General Mathematics',      room:'Mr. Meñez',     start:'17:45', end:'18:25', days:[6],       color:'#9A6BBF' },
-  { id:'seed-pask',    name:'Pag-aaral sa Kasaysayan',  room:'Mr. Reyes',     start:'17:45', end:'18:25', days:[2,3,4,5], color:'#C9A227' },
+  { id:'seed-gmath-a', name:'General Mathematics',      room:'Mr. Arnold',    start:'16:50', end:'17:30', days:[3,4],     color:'#9A6BBF' },
+  { id:'seed-gmath-b', name:'General Mathematics',      room:'Mr. Arnold',    start:'18:25', end:'19:05', days:[2],       color:'#9A6BBF' },
+  { id:'seed-gmath-c', name:'General Mathematics',      room:'Mr. Arnold',    start:'17:45', end:'18:25', days:[6],       color:'#9A6BBF' },
+  { id:'seed-pask',    name:'Pag-aaral sa Kasaysayan',  room:'Mr. Felix',     start:'17:45', end:'18:25', days:[2,3,4,5], color:'#C9A227' },
   { id:'seed-cc1-a',   name:'Creative Composition 1',   room:'Mr. Jesrick',   start:'18:25', end:'19:05', days:[4,5],     color:'#6B8F5C' },
   { id:'seed-cc1-b',   name:'Creative Composition 1',   room:'Mr. Jesrick',   start:'19:05', end:'19:45', days:[3],       color:'#6B8F5C' },
   { id:'seed-cc1-c',   name:'Creative Composition 1',   room:'Mr. Jesrick',   start:'16:10', end:'16:50', days:[6],       color:'#6B8F5C' },
-  { id:'seed-mk-a',    name:'Mabisang Komunikasyon',    room:'Mr. Carian',    start:'19:05', end:'19:45', days:[4],       color:'#5B7FBF' },
-  { id:'seed-mk-b',    name:'Mabisang Komunikasyon',    room:'Mr. Carian',    start:'18:25', end:'19:05', days:[6],       color:'#5B7FBF' },
-  { id:'seed-ec',      name:'Effective Communication',  room:'Mr. Jesrick',   start:'19:05', end:'19:45', days:[2],       color:'#C1443A' },
+  { id:'seed-mk-a',    name:'Mabisang Komunikasyon',    room:'Mr. Mark',      start:'19:05', end:'19:45', days:[4],       color:'#5B7FBF' },
+  { id:'seed-mk-b',    name:'Mabisang Komunikasyon',    room:'Mr. Mark',      start:'18:25', end:'19:05', days:[6],       color:'#5B7FBF' },
+  { id:'seed-ec',      name:'Effective Communication',  room:'Mr. Jesrick',   start:'19:05', end:'19:45', days:[2,6],     color:'#C1443A' },
   { id:'seed-hgp',     name:'HGP',                      room:'Mr. Felix',     start:'15:30', end:'16:10', days:[6],       color:'#9A6BBF' },
 ];
 
@@ -270,6 +270,13 @@ function renderTasks(){
   let list = state.tasks.slice();
   if(currentTaskFilter === 'open') list = list.filter(t => !t.done);
   else if(currentTaskFilter === 'done') list = list.filter(t => t.done);
+  const q = (document.getElementById('taskSearchInput').value || '').trim().toLowerCase();
+  if(q){
+    list = list.filter(t =>
+      t.name.toLowerCase().includes(q) ||
+      (t.notes && t.notes.toLowerCase().includes(q))
+    );
+  }
   list.sort((a,b) => {
     if(a.done !== b.done) return a.done ? 1 : -1;
     return a.due.localeCompare(b.due);
@@ -386,6 +393,19 @@ document.querySelectorAll('.filter').forEach(btn => {
   });
 });
 
+document.getElementById('taskSearchInput').addEventListener('input', renderTasks);
+
+document.getElementById('prevDayBtn').addEventListener('click', () => {
+  currentWeekDay = currentWeekDay === 1 ? 7 : currentWeekDay - 1;
+  renderDayTabs();
+  renderWeekClasses();
+});
+document.getElementById('nextDayBtn').addEventListener('click', () => {
+  currentWeekDay = currentWeekDay === 7 ? 1 : currentWeekDay + 1;
+  renderDayTabs();
+  renderWeekClasses();
+});
+
 // ---------- Class modal ----------
 
 const classModalOverlay = document.getElementById('classModalOverlay');
@@ -421,6 +441,7 @@ function openClassModal(existing){
   document.getElementById('classEndInput').value = existing ? existing.end : '';
   document.getElementById('classIconInput').value = selectedClassIcon;
   document.getElementById('deleteClassBtn').style.display = existing ? 'block' : 'none';
+  document.getElementById('duplicateClassBtn').style.display = existing ? 'block' : 'none';
   document.querySelector('#classModalOverlay h2').textContent = existing ? 'Edit class' : 'New class';
 
   document.querySelectorAll('#classDayPicker button').forEach(b => {
@@ -531,6 +552,17 @@ document.getElementById('deleteClassBtn').addEventListener('click', () => {
   saveData();
   closeModal('classModalOverlay');
   renderAll();
+});
+
+document.getElementById('duplicateClassBtn').addEventListener('click', () => {
+  const id = document.getElementById('classIdInput').value;
+  const existing = state.classes.find(c => c.id === id);
+  if(!existing) return;
+  const copy = { ...existing, id: uid(), name: existing.name + ' (copy)' };
+  state.classes.push(copy);
+  saveData();
+  renderAll();
+  openClassModal(copy);
 });
 
 // ---------- Task modal ----------

@@ -326,6 +326,26 @@ main{
 }
 
 /* ---- Week view day tabs ---- */
+.day-nav{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:16px;
+}
+.day-nav .day-tabs{ margin-bottom:0; flex:1; }
+.day-nav button#prevDayBtn,
+.day-nav button#nextDayBtn{
+  flex-shrink:0;
+  width:32px;height:32px;
+  border-radius:50%;
+  border:1px solid var(--hairline);
+  background:var(--panel);
+  color:var(--text);
+  font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+}
+.day-nav button#prevDayBtn:active,
+.day-nav button#nextDayBtn:active{ border-color:var(--gold); color:var(--gold); }
 .day-tabs{
   display:flex;
   gap:6px;
@@ -349,7 +369,19 @@ main{
   font-weight:600;
 }
 
-/* ---- Task filters ---- */
+/* ---- Task filters + search ---- */
+.task-search{
+  display:block;
+  width:100%;
+  background:var(--panel);
+  border:1px solid var(--hairline);
+  color:var(--text);
+  padding:10px 13px;
+  border-radius:8px;
+  font-size:14px;
+  margin-bottom:12px;
+  font-family:'IBM Plex Sans', sans-serif;
+}
 .task-filters{ display:flex; gap:8px; margin-bottom:16px; }
 .filter{
   background:none;
