@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<title>JIN</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="pin"></div>
+      <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+      <h1>JIN</h1>
+      <p class="subtitle" id="dateLine">—</p>
+      <p class="section-line" id="sectionLine">—</p>
+      <div class="offline-pill" id="offlinePill">Offline — showing saved data</div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="today" role="tab">Today</button>
+    <button class="tab" data-view="week" role="tab">Week</button>
+    <button class="tab" data-view="tasks" role="tab">Tasks</button>
+  </nav>
+
+  <main id="views">
+
+    <!-- TODAY -->
+    <section id="view-today" class="view active">
+      <div id="nowStatus" class="now-status"><span class="dot"></span><span class="label">—</span></div>
+      <div id="progressStat" class="progress-stat"></div>
+      <div class="section-head">
+        <span class="eyebrow">On the schedule</span>
+      </div>
+      <div id="todayClasses" class="entry-list"></div>
+
+      <div class="section-head" style="margin-top:28px;">
+        <span class="eyebrow">Due today</span>
+      </div>
+      <div id="todayTasks" class="entry-list"></div>
+    </section>
+
+    <!-- WEEK -->
+    <section id="view-week" class="view">
+      <div class="day-tabs" id="dayTabs"></div>
+      <div id="weekClasses" class="entry-list"></div>
+    </section>
+
+    <!-- TASKS -->
+    <section id="view-tasks" class="view">
+      <div class="task-filters" id="taskFilters">
+        <button class="filter active" data-filter="open">Open</button>
+        <button class="filter" data-filter="done">Done</button>
+        <button class="filter" data-filter="all">All</button>
+      </div>
+      <div id="taskList" class="entry-list"></div>
+    </section>
+
+  </main>
+
+  <button id="fab" aria-label="Add">+</button>
+
+</div>
+
+<!-- MODAL: add class -->
+<div class="modal-overlay" id="classModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>New class</h2>
+      <button class="modal-close" data-close="classModalOverlay">×</button>
+    </div>
+    <form id="classForm">
+      <label>Class name
+        <input type="text" id="classNameInput" required placeholder="e.g. Physics 101">
+      </label>
+      <label>Room / location
+        <input type="text" id="classRoomInput" list="teacherListOptions" placeholder="e.g. Mr. Reyes or Bldg 4, Rm 210">
+        <datalist id="teacherListOptions"></datalist>
+      </label>
+      <div class="row">
+        <label>Starts
+          <input type="time" id="classStartInput" required>
+        </label>
+        <label>Ends
+          <input type="time" id="classEndInput" required>
+        </label>
+      </div>
+      <label>Days
+        <div class="day-picker" id="classDayPicker">
+          <button type="button" data-day="1">S</button>
+          <button type="button" data-day="2">M</button>
+          <button type="button" data-day="3">T</button>
+          <button type="button" data-day="4">W</button>
+          <button type="button" data-day="5">T</button>
+          <button type="button" data-day="6">F</button>
+          <button type="button" data-day="7">S</button>
+        </div>
+      </label>
+      <label>Tag color
+        <div class="color-picker" id="classColorPicker">
+          <button type="button" data-color="#C9A227" style="background:#C9A227" class="selected"></button>
+          <button type="button" data-color="#6B8F5C" style="background:#6B8F5C"></button>
+          <button type="button" data-color="#5B7FBF" style="background:#5B7FBF"></button>
+          <button type="button" data-color="#C1443A" style="background:#C1443A"></button>
+          <button type="button" data-color="#9A6BBF" style="background:#9A6BBF"></button>
+        </div>
+      </label>
+      <input type="hidden" id="classIdInput">
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="deleteClassBtn" style="display:none;">Delete</button>
+        <button type="submit" class="btn-primary">Save class</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: add task -->
+<div class="modal-overlay" id="taskModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>New task</h2>
+      <button class="modal-close" data-close="taskModalOverlay">×</button>
+    </div>
+    <form id="taskForm">
+      <label>Task
+        <input type="text" id="taskNameInput" required placeholder="e.g. Lab report ch. 4">
+      </label>
+      <label>Due date
+        <input type="date" id="taskDueInput" required>
+      </label>
+      <label>Linked class
+        <select id="taskClassInput">
+          <option value="">None</option>
+        </select>
+      </label>
+      <label>Priority
+        <div class="priority-picker" id="taskPriorityPicker">
+          <button type="button" data-priority="low">Low</button>
+          <button type="button" data-priority="med" class="selected">Med</button>
+          <button type="button" data-priority="high">High</button>
+        </div>
+      </label>
+      <input type="hidden" id="taskIdInput">
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="deleteTaskBtn" style="display:none;">Delete</button>
+        <button type="submit" class="btn-primary">Save task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ADD PICKER -->
+<div class="modal-overlay" id="addPickerOverlay">
+  <div class="modal small">
+    <div class="modal-head">
+      <h2>Add entry</h2>
+      <button class="modal-close" data-close="addPickerOverlay">×</button>
+    </div>
+    <div class="add-picker">
+      <button id="pickClass">New class</button>
+      <button id="pickTask">New task</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="modal-overlay" id="settingsModalOverlay">
+  <div class="modal small">
+    <div class="modal-head">
+      <h2>Settings</h2>
+      <button class="modal-close" data-close="settingsModalOverlay">×</button>
+    </div>
+    <p class="settings-note">JIN works fully offline — everything is saved on this device. Back up your data before clearing browser storage or switching phones.</p>
+    <div class="settings-list">
+      <button id="manageTeachersBtn">Manage teachers <span class="hint">rename everywhere</span></button>
+      <button id="editClassInfoBtn">Edit class info <span class="hint">section, adviser</span></button>
+      <button id="exportDataBtn">Export backup <span class="hint">.json</span></button>
+      <button id="importDataBtn">Import backup <span class="hint">.json</span></button>
+      <button id="resetSeedBtn">Restore original schedule</button>
+      <button id="clearDoneBtn">Clear completed tasks</button>
+    </div>
+    <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+  </div>
+</div>
+
+<!-- TEACHERS -->
+<div class="modal-overlay" id="teacherModalOverlay">
+  <div class="modal small">
+    <div class="modal-head">
+      <h2>Manage teachers</h2>
+      <button class="modal-close" data-close="teacherModalOverlay">×</button>
+    </div>
+    <p class="settings-note">Tap a name to rename it. It updates on every class that uses it.</p>
+    <div class="settings-list" id="teacherListRows"></div>
+  </div>
+</div>
+
+<!-- CLASS INFO -->
+<div class="modal-overlay" id="classInfoModalOverlay">
+  <div class="modal small">
+    <div class="modal-head">
+      <h2>Class info</h2>
+      <button class="modal-close" data-close="classInfoModalOverlay">×</button>
+    </div>
+    <form id="classInfoForm">
+      <label>Grade & Section
+        <input type="text" id="infoSectionInput" placeholder="e.g. 11-ASSH LANGUAGE 1B">
+      </label>
+      <label>Group / session
+        <input type="text" id="infoGroupInput" placeholder="e.g. E2 (Afternoon Session)">
+      </label>
+      <label>Class Adviser
+        <input type="text" id="infoAdviserInput" placeholder="e.g. Mr. Felix Reyes">
+      </label>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
