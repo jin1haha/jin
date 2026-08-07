@@ -8,20 +8,20 @@ const DAY_LABELS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Fri
 // 11-ASSH LANGUAGE 1B, Group E2 (Afternoon Session), Adviser: Mr. Felix Reyes
 // Seeded from the user's class schedule. Days: Sun=1 ... Sat=7.
 const SEED_CLASSES = [
-  { id:'seed-lcs',    name:'Life and Career Skills',   room:'Ms. Cabrera',   start:'15:30', end:'16:10', days:[2,3,4,5], color:'#6B8F5C' },
-  { id:'seed-fil',     name:'Filipino 1',               room:'Ms. Sartillo',  start:'16:10', end:'16:50', days:[2,3,4,5], color:'#5B7FBF' },
-  { id:'seed-gsci-a',  name:'General Science',          room:'Mr. Carino',    start:'16:50', end:'17:30', days:[2,5,6],   color:'#C1443A' },
-  { id:'seed-gsci-b',  name:'General Science',          room:'Mr. Carino',    start:'18:25', end:'19:05', days:[3],       color:'#C1443A' },
+  { id:'seed-lcs',    name:'Life and Career Skills',   room:'Ms. Aica',      start:'15:30', end:'16:10', days:[2,3,4,5], color:'#6B8F5C' },
+  { id:'seed-fil',     name:'Filipino 1',               room:'Ms. Shicka',    start:'16:10', end:'16:50', days:[2,3,4,5], color:'#5B7FBF' },
+  { id:'seed-gsci-a',  name:'General Science',          room:'Mr. Miguel',    start:'16:50', end:'17:30', days:[2,5,6],   color:'#C1443A' },
+  { id:'seed-gsci-b',  name:'General Science',          room:'Mr. Miguel',    start:'18:25', end:'19:05', days:[3],       color:'#C1443A' },
   { id:'seed-gmath-a', name:'General Mathematics',      room:'Mr. Meñez',     start:'16:50', end:'17:30', days:[3,4],     color:'#9A6BBF' },
   { id:'seed-gmath-b', name:'General Mathematics',      room:'Mr. Meñez',     start:'18:25', end:'19:05', days:[2],       color:'#9A6BBF' },
   { id:'seed-gmath-c', name:'General Mathematics',      room:'Mr. Meñez',     start:'17:45', end:'18:25', days:[6],       color:'#9A6BBF' },
   { id:'seed-pask',    name:'Pag-aaral sa Kasaysayan',  room:'Mr. Reyes',     start:'17:45', end:'18:25', days:[2,3,4,5], color:'#C9A227' },
-  { id:'seed-cc1-a',   name:'Creative Composition 1',   room:'Ms. Sartillo',  start:'18:25', end:'19:05', days:[4,5],     color:'#6B8F5C' },
-  { id:'seed-cc1-b',   name:'Creative Composition 1',   room:'Ms. Sartillo',  start:'19:05', end:'19:45', days:[3],       color:'#6B8F5C' },
-  { id:'seed-cc1-c',   name:'Creative Composition 1',   room:'Ms. Sartillo',  start:'16:10', end:'16:50', days:[6],       color:'#6B8F5C' },
+  { id:'seed-cc1-a',   name:'Creative Composition 1',   room:'Mr. Jesrick',   start:'18:25', end:'19:05', days:[4,5],     color:'#6B8F5C' },
+  { id:'seed-cc1-b',   name:'Creative Composition 1',   room:'Mr. Jesrick',   start:'19:05', end:'19:45', days:[3],       color:'#6B8F5C' },
+  { id:'seed-cc1-c',   name:'Creative Composition 1',   room:'Mr. Jesrick',   start:'16:10', end:'16:50', days:[6],       color:'#6B8F5C' },
   { id:'seed-mk-a',    name:'Mabisang Komunikasyon',    room:'Mr. Carian',    start:'19:05', end:'19:45', days:[4],       color:'#5B7FBF' },
   { id:'seed-mk-b',    name:'Mabisang Komunikasyon',    room:'Mr. Carian',    start:'18:25', end:'19:05', days:[6],       color:'#5B7FBF' },
-  { id:'seed-ec',      name:'Effective Communication',  room:'Mr. Cantuangco',start:'19:05', end:'19:45', days:[2],       color:'#C1443A' },
+  { id:'seed-ec',      name:'Effective Communication',  room:'Mr. Jesrick',   start:'19:05', end:'19:45', days:[2],       color:'#C1443A' },
   { id:'seed-hgp',     name:'HGP',                      room:'Mr. Felix',     start:'15:30', end:'16:10', days:[6],       color:'#9A6BBF' },
 ];
 
@@ -31,17 +31,24 @@ const DEFAULT_PROFILE = {
   adviser: 'Mr. Felix Reyes'
 };
 
+const DEFAULT_SETTINGS = {
+  accent: '#FFFFFF',
+  bgImage: null,
+  bgDim: 78
+};
+
 function loadData(){
   try{
     const raw = localStorage.getItem(STORE_KEY);
-    if(!raw) return { classes: SEED_CLASSES.map(c => ({...c})), tasks: [], profile: {...DEFAULT_PROFILE} };
+    if(!raw) return { classes: SEED_CLASSES.map(c => ({...c})), tasks: [], profile: {...DEFAULT_PROFILE}, settings: {...DEFAULT_SETTINGS} };
     const parsed = JSON.parse(raw);
     const classes = (parsed.classes && parsed.classes.length) ? parsed.classes : SEED_CLASSES.map(c => ({...c}));
     const profile = parsed.profile ? { ...DEFAULT_PROFILE, ...parsed.profile } : {...DEFAULT_PROFILE};
-    return { classes, tasks: parsed.tasks || [], profile };
+    const settings = parsed.settings ? { ...DEFAULT_SETTINGS, ...parsed.settings } : {...DEFAULT_SETTINGS};
+    return { classes, tasks: parsed.tasks || [], profile, settings };
   }catch(e){
     console.error('Failed to load data', e);
-    return { classes: SEED_CLASSES.map(c => ({...c})), tasks: [], profile: {...DEFAULT_PROFILE} };
+    return { classes: SEED_CLASSES.map(c => ({...c})), tasks: [], profile: {...DEFAULT_PROFILE}, settings: {...DEFAULT_SETTINGS} };
   }
 }
 
@@ -86,6 +93,50 @@ function fmtDuration(mins){
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+// ---------- Appearance (accent color + background photo) ----------
+
+function applyAppearance(){
+  const s = state.settings || DEFAULT_SETTINGS;
+  document.documentElement.style.setProperty('--gold', s.accent || '#FFFFFF');
+  const dim = (s.bgDim != null ? s.bgDim : 78) / 100;
+  document.documentElement.style.setProperty('--bg-dim-color', `rgba(10,10,10,${dim})`);
+  if(s.bgImage){
+    document.body.style.backgroundImage = `url(${s.bgImage})`;
+    document.body.classList.add('has-bg-image');
+  }else{
+    document.body.style.backgroundImage = '';
+    document.body.classList.remove('has-bg-image');
+  }
+}
+
+// Resize/compress an uploaded image client-side before storing as base64,
+// so backgrounds and icons don't bloat localStorage.
+function readImageResized(file, maxDim, quality){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not read image'));
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > maxDim || height > maxDim){
+          const ratio = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // ---------- Rendering ----------
@@ -241,7 +292,11 @@ function classEntryEl(c, nowMin){
   const isToday = c.days.includes(todayDayNum) && typeof nowMin === 'number';
   const isLive = isToday && nowMin >= toMinutes(c.start) && nowMin < toMinutes(c.end);
   if(isLive) div.classList.add('live-now');
+  const iconHtml = c.icon
+    ? (c.icon.startsWith('data:') ? `<img src="${c.icon}" alt="">` : c.icon)
+    : (c.name ? c.name.charAt(0).toUpperCase() : '?');
   div.innerHTML = `
+    <div class="entry-icon" style="${c.icon ? '' : `background:${c.color || '#C9A227'}22; color:${c.color || '#C9A227'};`}">${iconHtml}</div>
     <div class="entry-body">
       <div class="entry-title">${escapeHtml(c.name)}${isLive ? '<span class="live-badge">Now</span>' : ''}</div>
       <div class="entry-meta">
@@ -261,13 +316,14 @@ function taskEntryEl(t){
   const overdue = !t.done && t.due < todayIso();
   if(overdue) div.classList.add('overdue');
   const linkedClass = state.classes.find(c => c.id === t.classId);
+  const dueLabel = fmtDate(t.due) + (t.time ? ` · ${fmtTime(t.time)}` : '');
 
   div.innerHTML = `
     <div class="entry-check ${t.done ? 'checked':''}">${t.done ? '✓':''}</div>
     <div class="entry-body">
-      <div class="entry-title">${escapeHtml(t.name)}</div>
+      <div class="entry-title">${escapeHtml(t.name)}${t.notes ? ' <span class="hint">📝</span>' : ''}</div>
       <div class="entry-meta">
-        <span>${overdue ? 'Overdue · ' : ''}${fmtDate(t.due)}</span>
+        <span>${overdue ? 'Overdue · ' : ''}${dueLabel}</span>
         ${linkedClass ? `<span>${escapeHtml(linkedClass.name)}</span>` : ''}
         <span class="pill ${t.priority}">${t.priority}</span>
       </div>
@@ -336,6 +392,7 @@ const classModalOverlay = document.getElementById('classModalOverlay');
 const classForm = document.getElementById('classForm');
 let selectedClassDays = new Set();
 let selectedClassColor = '#C9A227';
+let selectedClassIcon = '';
 
 function getTeachers(){
   return Array.from(new Set(state.classes.map(c => c.room).filter(Boolean))).sort();
@@ -356,11 +413,13 @@ function openClassModal(existing){
   populateTeacherDatalist();
   selectedClassDays = new Set(existing ? existing.days : []);
   selectedClassColor = existing ? existing.color : '#C9A227';
+  selectedClassIcon = existing ? (existing.icon || '') : '';
   document.getElementById('classIdInput').value = existing ? existing.id : '';
   document.getElementById('classNameInput').value = existing ? existing.name : '';
   document.getElementById('classRoomInput').value = existing ? existing.room : '';
   document.getElementById('classStartInput').value = existing ? existing.start : '';
   document.getElementById('classEndInput').value = existing ? existing.end : '';
+  document.getElementById('classIconInput').value = selectedClassIcon;
   document.getElementById('deleteClassBtn').style.display = existing ? 'block' : 'none';
   document.querySelector('#classModalOverlay h2').textContent = existing ? 'Edit class' : 'New class';
 
@@ -370,9 +429,53 @@ function openClassModal(existing){
   document.querySelectorAll('#classColorPicker button').forEach(b => {
     b.classList.toggle('selected', b.dataset.color === selectedClassColor);
   });
+  updateIconPickerUI();
 
   classModalOverlay.classList.add('open');
 }
+
+function updateIconPickerUI(){
+  const isCustom = selectedClassIcon.startsWith('data:');
+  document.querySelectorAll('#classIconPicker button').forEach(b => {
+    b.classList.toggle('selected', !isCustom && b.dataset.icon === selectedClassIcon);
+  });
+  const wrap = document.getElementById('classIconPreviewWrap');
+  const preview = document.getElementById('classIconPreview');
+  if(isCustom){
+    wrap.style.display = 'flex';
+    preview.src = selectedClassIcon;
+  }else{
+    wrap.style.display = 'none';
+    preview.src = '';
+  }
+}
+
+document.querySelectorAll('#classIconPicker button').forEach(b => {
+  b.addEventListener('click', () => {
+    selectedClassIcon = b.dataset.icon;
+    document.getElementById('classIconInput').value = selectedClassIcon;
+    updateIconPickerUI();
+  });
+});
+
+document.getElementById('classIconUpload').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    selectedClassIcon = await readImageResized(file, 160, 0.85);
+    document.getElementById('classIconInput').value = selectedClassIcon;
+    updateIconPickerUI();
+  }catch(err){
+    alert('Could not read that image.');
+  }
+  e.target.value = '';
+});
+
+document.getElementById('classIconClear').addEventListener('click', () => {
+  selectedClassIcon = '';
+  document.getElementById('classIconInput').value = '';
+  updateIconPickerUI();
+});
 
 document.querySelectorAll('#classDayPicker button').forEach(b => {
   b.addEventListener('click', () => {
@@ -401,7 +504,8 @@ classForm.addEventListener('submit', (e) => {
     start: document.getElementById('classStartInput').value,
     end: document.getElementById('classEndInput').value,
     days: Array.from(selectedClassDays),
-    color: selectedClassColor
+    color: selectedClassColor,
+    icon: selectedClassIcon
   };
   if(data.days.length === 0){
     alert('Pick at least one day for this class.');
@@ -454,6 +558,8 @@ function openTaskModal(existing){
   document.getElementById('taskIdInput').value = existing ? existing.id : '';
   document.getElementById('taskNameInput').value = existing ? existing.name : '';
   document.getElementById('taskDueInput').value = existing ? existing.due : todayIso();
+  document.getElementById('taskTimeInput').value = existing ? (existing.time || '') : '';
+  document.getElementById('taskNotesInput').value = existing ? (existing.notes || '') : '';
   populateClassSelect();
   document.getElementById('taskClassInput').value = existing ? (existing.classId || '') : '';
   document.getElementById('deleteTaskBtn').style.display = existing ? 'block' : 'none';
@@ -482,8 +588,10 @@ taskForm.addEventListener('submit', (e) => {
     id: id || uid(),
     name: document.getElementById('taskNameInput').value.trim(),
     due: document.getElementById('taskDueInput').value,
+    time: document.getElementById('taskTimeInput').value,
     classId: document.getElementById('taskClassInput').value,
     priority: selectedPriority,
+    notes: document.getElementById('taskNotesInput').value.trim(),
     done: existing ? existing.done : false
   };
   if(id){
@@ -538,8 +646,65 @@ document.querySelectorAll('.modal-overlay').forEach(ov => {
 // ---------- Settings: backup, restore, offline status ----------
 
 document.getElementById('settingsBtn').addEventListener('click', () => {
+  syncSettingsUI();
   document.getElementById('settingsModalOverlay').classList.add('open');
 });
+
+// ---- Appearance: accent color + background photo ----
+
+function syncSettingsUI(){
+  const s = state.settings || DEFAULT_SETTINGS;
+  document.querySelectorAll('#accentPicker button').forEach(b => {
+    b.classList.toggle('selected', b.dataset.accent === (s.accent || '#FFFFFF'));
+  });
+  document.getElementById('bgDimInput').value = s.bgDim != null ? s.bgDim : 78;
+  document.getElementById('bgDimValue').textContent = `${s.bgDim != null ? s.bgDim : 78}%`;
+  const preview = document.getElementById('bgPreview');
+  if(s.bgImage){
+    preview.style.backgroundImage = `url(${s.bgImage})`;
+    preview.textContent = '';
+  }else{
+    preview.style.backgroundImage = '';
+    preview.textContent = 'No custom background set';
+  }
+}
+
+document.querySelectorAll('#accentPicker button').forEach(b => {
+  b.addEventListener('click', () => {
+    state.settings.accent = b.dataset.accent;
+    saveData();
+    applyAppearance();
+    syncSettingsUI();
+  });
+});
+
+document.getElementById('bgUploadInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    state.settings.bgImage = await readImageResized(file, 1080, 0.75);
+    saveData();
+    applyAppearance();
+    syncSettingsUI();
+  }catch(err){
+    alert('Could not read that image.');
+  }
+  e.target.value = '';
+});
+
+document.getElementById('bgClearBtn').addEventListener('click', () => {
+  state.settings.bgImage = null;
+  saveData();
+  applyAppearance();
+  syncSettingsUI();
+});
+
+document.getElementById('bgDimInput').addEventListener('input', (e) => {
+  state.settings.bgDim = Number(e.target.value);
+  document.getElementById('bgDimValue').textContent = `${e.target.value}%`;
+  applyAppearance();
+});
+document.getElementById('bgDimInput').addEventListener('change', () => saveData());
 
 // ---- Manage teachers (rename propagates to every class using that name) ----
 
@@ -558,23 +723,31 @@ function renderTeacherList(){
     return;
   }
   teachers.forEach(name => {
-    const btn = document.createElement('button');
     const count = state.classes.filter(c => c.room === name).length;
-    btn.innerHTML = `${escapeHtml(name)} <span class="hint">${count} class${count === 1 ? '' : 'es'}</span>`;
-    btn.addEventListener('click', () => renameTeacher(name));
-    container.appendChild(btn);
+    const row = document.createElement('div');
+    row.className = 'teacher-row';
+    row.innerHTML = `
+      <input type="text" value="${escapeHtml(name)}">
+      <span class="hint">${count} class${count === 1 ? '' : 'es'}</span>
+      <button type="button" class="save-btn">Save</button>
+    `;
+    const input = row.querySelector('input');
+    const saveBtn = row.querySelector('.save-btn');
+    input.addEventListener('input', () => {
+      saveBtn.classList.toggle('dirty', input.value.trim() !== name && input.value.trim() !== '');
+    });
+    const commit = () => {
+      const trimmed = input.value.trim();
+      if(!trimmed || trimmed === name) return;
+      state.classes.forEach(c => { if(c.room === name) c.room = trimmed; });
+      saveData();
+      renderTeacherList();
+      renderAll();
+    };
+    saveBtn.addEventListener('click', commit);
+    input.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); commit(); } });
+    container.appendChild(row);
   });
-}
-
-function renameTeacher(oldName){
-  const newName = prompt('Rename teacher', oldName);
-  if(newName === null) return;
-  const trimmed = newName.trim();
-  if(!trimmed || trimmed === oldName) return;
-  state.classes.forEach(c => { if(c.room === oldName) c.room = trimmed; });
-  saveData();
-  renderTeacherList();
-  renderAll();
 }
 
 // ---- Class info (section / group / adviser) ----
@@ -628,8 +801,14 @@ document.getElementById('importFileInput').addEventListener('change', (e) => {
         throw new Error('Missing classes/tasks arrays');
       }
       if(!confirm('Import this backup? It will replace everything currently in JIN.')) return;
-      state = { classes: parsed.classes, tasks: parsed.tasks, profile: parsed.profile ? { ...DEFAULT_PROFILE, ...parsed.profile } : {...DEFAULT_PROFILE} };
+      state = {
+        classes: parsed.classes,
+        tasks: parsed.tasks,
+        profile: parsed.profile ? { ...DEFAULT_PROFILE, ...parsed.profile } : {...DEFAULT_PROFILE},
+        settings: parsed.settings ? { ...DEFAULT_SETTINGS, ...parsed.settings } : {...DEFAULT_SETTINGS}
+      };
       saveData();
+      applyAppearance();
       closeModal('settingsModalOverlay');
       renderAll();
     }catch(err){
@@ -675,4 +854,5 @@ if('serviceWorker' in navigator){
 
 // ---------- Init ----------
 
+applyAppearance();
 renderAll();

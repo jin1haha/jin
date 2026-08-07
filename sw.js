@@ -1,4 +1,4 @@
-const CACHE = 'jin-v3';
+const CACHE = 'jin-v4';
 const ASSETS = [
   './',
   './index.html',

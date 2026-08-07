@@ -116,6 +116,32 @@
           <button type="button" data-color="#9A6BBF" style="background:#9A6BBF"></button>
         </div>
       </label>
+      <label>Icon
+        <div class="icon-picker" id="classIconPicker">
+          <button type="button" data-icon="">None</button>
+          <button type="button" data-icon="📘">📘</button>
+          <button type="button" data-icon="📚">📚</button>
+          <button type="button" data-icon="🔬">🔬</button>
+          <button type="button" data-icon="➗">➗</button>
+          <button type="button" data-icon="🧮">🧮</button>
+          <button type="button" data-icon="📝">📝</button>
+          <button type="button" data-icon="🗣️">🗣️</button>
+          <button type="button" data-icon="🎨">🎨</button>
+          <button type="button" data-icon="🕰️">🕰️</button>
+          <button type="button" data-icon="🎓">🎓</button>
+          <button type="button" data-icon="🌐">🌐</button>
+          <button type="button" data-icon="💻">💻</button>
+        </div>
+        <div class="icon-upload-row">
+          <label class="icon-upload-btn" for="classIconUpload">Or upload a picture</label>
+          <input type="file" id="classIconUpload" accept="image/*" style="display:none;">
+          <span id="classIconPreviewWrap" style="display:none;">
+            <img id="classIconPreview" alt="icon preview">
+            <button type="button" id="classIconClear">Remove</button>
+          </span>
+        </div>
+        <input type="hidden" id="classIconInput">
+      </label>
       <input type="hidden" id="classIdInput">
       <div class="modal-actions">
         <button type="button" class="btn-ghost" id="deleteClassBtn" style="display:none;">Delete</button>
@@ -139,6 +165,9 @@
       <label>Due date
         <input type="date" id="taskDueInput" required>
       </label>
+      <label>Due time <span class="hint">optional</span>
+        <input type="time" id="taskTimeInput">
+      </label>
       <label>Linked class
         <select id="taskClassInput">
           <option value="">None</option>
@@ -150,6 +179,9 @@
           <button type="button" data-priority="med" class="selected">Med</button>
           <button type="button" data-priority="high">High</button>
         </div>
+      </label>
+      <label>Notes <span class="hint">optional</span>
+        <textarea id="taskNotesInput" rows="3" placeholder="Extra details, links, page numbers..."></textarea>
       </label>
       <input type="hidden" id="taskIdInput">
       <div class="modal-actions">
@@ -182,6 +214,33 @@
       <button class="modal-close" data-close="settingsModalOverlay">×</button>
     </div>
     <p class="settings-note">JIN works fully offline — everything is saved on this device. Back up your data before clearing browser storage or switching phones.</p>
+
+    <div class="appearance-block">
+      <h3>Accent color</h3>
+      <div class="accent-picker" id="accentPicker">
+        <button type="button" data-accent="#FFFFFF" style="background:#FFFFFF" class="selected"></button>
+        <button type="button" data-accent="#C9A227" style="background:#C9A227"></button>
+        <button type="button" data-accent="#6B8F5C" style="background:#6B8F5C"></button>
+        <button type="button" data-accent="#5B7FBF" style="background:#5B7FBF"></button>
+        <button type="button" data-accent="#C1443A" style="background:#C1443A"></button>
+        <button type="button" data-accent="#9A6BBF" style="background:#9A6BBF"></button>
+      </div>
+    </div>
+
+    <div class="appearance-block">
+      <h3>Background</h3>
+      <div class="bg-actions">
+        <label class="icon-upload-btn" for="bgUploadInput">Choose photo</label>
+        <input type="file" id="bgUploadInput" accept="image/*" style="display:none;">
+        <button type="button" class="icon-upload-btn" id="bgClearBtn" style="cursor:pointer;">Use default</button>
+      </div>
+      <div class="bg-preview" id="bgPreview">No custom background set</div>
+      <div class="bg-dim-row">
+        <label>Dim overlay <span id="bgDimValue">78%</span></label>
+        <input type="range" id="bgDimInput" min="30" max="95" value="78">
+      </div>
+    </div>
+
     <div class="settings-list">
       <button id="manageTeachersBtn">Manage teachers <span class="hint">rename everywhere</span></button>
       <button id="editClassInfoBtn">Edit class info <span class="hint">section, adviser</span></button>
