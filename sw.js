@@ -1,4 +1,4 @@
-const CACHE = 'jin-v6';
+const CACHE = 'jin-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -23,6 +23,18 @@ self.addEventListener('activate', (e) => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for(const client of list){
+        if('focus' in client) return client.focus();
+      }
+      if(clients.openWindow) return clients.openWindow('./index.html');
+    })
+  );
 });
 
 self.addEventListener('fetch', (e) => {

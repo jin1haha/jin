@@ -221,6 +221,32 @@
     </div>
     <p class="settings-note">JIN works fully offline — everything is saved on this device. Back up your data before clearing browser storage or switching phones.</p>
 
+    <button id="installAppBtn" class="install-btn" style="display:none;">📲 Install JIN as an app</button>
+    <div id="installedNote" class="installed-note" style="display:none;">✓ Installed as an app</div>
+
+    <div class="appearance-block">
+      <h3>Notifications</h3>
+      <div class="toggle-row">
+        <span>Class reminders</span>
+        <button type="button" class="toggle-switch" id="notifyClassToggle"></button>
+      </div>
+      <div class="toggle-sub" id="notifyMinutesRow">
+        <label>Remind me
+          <select id="notifyMinutesInput">
+            <option value="5">5 minutes before</option>
+            <option value="10" selected>10 minutes before</option>
+            <option value="15">15 minutes before</option>
+            <option value="30">30 minutes before</option>
+          </select>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span>Task due-date reminders</span>
+        <button type="button" class="toggle-switch" id="notifyTaskToggle"></button>
+      </div>
+      <p class="settings-note" id="notifyPermNote" style="margin:10px 0 0;">Notifications only fire while JIN is open in a tab or running in the background — this is a local app with no server, so it can't wake your phone up from fully closed.</p>
+    </div>
+
     <div class="appearance-block">
       <h3>Accent color</h3>
       <div class="accent-picker" id="accentPicker">

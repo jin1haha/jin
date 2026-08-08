@@ -12,7 +12,7 @@ const DAY_LABELS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Fri
 // gets those specific fixes auto-applied on next load — no manual "Restore
 // original schedule" needed. Custom classes they added themselves are never
 // touched; only entries whose id still matches a seed-* id get refreshed.
-const SEED_VERSION = 2;
+const SEED_VERSION = 3;
 
 const SEED_CLASSES = [
   { id:'seed-lcs',    name:'Life and Career Skills',   room:'Ms. Aica',      start:'15:30', end:'16:10', days:[2,3,4,5], color:'#6B8F5C' },
@@ -30,6 +30,7 @@ const SEED_CLASSES = [
   { id:'seed-mk-b',    name:'Mabisang Komunikasyon',    room:'Mr. Mark',      start:'18:25', end:'19:05', days:[6],       color:'#5B7FBF' },
   { id:'seed-ec',      name:'Effective Communication',  room:'Mr. Jesrick',   start:'19:05', end:'19:45', days:[2,6],     color:'#C1443A' },
   { id:'seed-hgp',     name:'HGP',                      room:'Mr. Felix',     start:'15:30', end:'16:10', days:[6],       color:'#9A6BBF' },
+  { id:'seed-break',   name:'Break Time',                room:'',             start:'17:30', end:'17:45', days:[2,3,4,5,6], color:'#5a5a5a', isBreak:true },
 ];
 
 const DEFAULT_PROFILE = {
@@ -41,17 +42,27 @@ const DEFAULT_PROFILE = {
 const DEFAULT_SETTINGS = {
   accent: '#FFFFFF',
   bgImage: null,
-  bgDim: 78
+  bgDim: 78,
+  notifyClass: false,
+  notifyMinutes: 10,
+  notifyTasks: false
 };
 
 function migrateSeedClasses(classes){
   const byId = Object.fromEntries(SEED_CLASSES.map(c => [c.id, c]));
-  return classes.map(c => {
+  const existingIds = new Set(classes.map(c => c.id));
+  const updated = classes.map(c => {
     const fresh = byId[c.id];
     if(!fresh) return c; // not a seed class (user-created), leave alone
     // keep any custom icon the user picked; refresh everything else
     return { ...fresh, icon: c.icon || fresh.icon || '' };
   });
+  // Add any brand-new seed entries (e.g. Break Time) that this saved data
+  // predates, so existing users pick them up automatically too.
+  SEED_CLASSES.forEach(sc => {
+    if(!existingIds.has(sc.id)) updated.push({...sc});
+  });
+  return updated;
 }
 
 function loadData(){
@@ -116,7 +127,72 @@ function fmtDuration(mins){
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
-// ---------- Appearance (accent color + background photo) ----------
+// ---------- Notifications (local only — no server/push, only fires while JIN is open) ----------
+
+const NOTIFIED_KEY = 'jin_notified_v1';
+
+function getNotifiedStore(){
+  try{
+    const raw = localStorage.getItem(NOTIFIED_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if(!parsed || parsed.date !== todayIso()) return { date: todayIso(), ids: [] };
+    return parsed;
+  }catch(e){ return { date: todayIso(), ids: [] }; }
+}
+
+function markNotified(id){
+  const store = getNotifiedStore();
+  if(!store.ids.includes(id)) store.ids.push(id);
+  localStorage.setItem(NOTIFIED_KEY, JSON.stringify(store));
+}
+
+function alreadyNotified(id){
+  return getNotifiedStore().ids.includes(id);
+}
+
+async function fireNotification(title, body, tag){
+  if(Notification.permission !== 'granted') return;
+  try{
+    if(navigator.serviceWorker && navigator.serviceWorker.ready){
+      const reg = await navigator.serviceWorker.ready;
+      reg.showNotification(title, { body, tag, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png' });
+    }else{
+      new Notification(title, { body, tag });
+    }
+  }catch(e){ console.warn('Notification failed', e); }
+}
+
+function checkNotifications(){
+  const s = state.settings || DEFAULT_SETTINGS;
+  if(Notification.permission !== 'granted') return;
+  const dayNum = new Date().getDay() + 1;
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+
+  if(s.notifyClass){
+    classesForDay(dayNum).filter(c => !c.isBreak).forEach(c => {
+      const diff = toMinutes(c.start) - nowMin;
+      const key = `class:${todayIso()}:${c.id}`;
+      if(diff >= 0 && diff <= (s.notifyMinutes || 10) && !alreadyNotified(key)){
+        fireNotification(
+          `Starting in ${diff <= 1 ? 'a minute' : diff + ' min'}: ${c.name}`,
+          c.room ? `With ${c.room} · ${fmtTime(c.start)}` : fmtTime(c.start),
+          key
+        );
+        markNotified(key);
+      }
+    });
+  }
+
+  if(s.notifyTasks){
+    state.tasks.filter(t => !t.done && t.due === todayIso()).forEach(t => {
+      const key = `task:${todayIso()}:${t.id}`;
+      if(!alreadyNotified(key)){
+        fireNotification(`Due today: ${t.name}`, t.time ? `By ${fmtTime(t.time)}` : 'No specific time set', key);
+        markNotified(key);
+      }
+    });
+  }
+}
 
 function applyAppearance(){
   const s = state.settings || DEFAULT_SETTINGS;
@@ -178,7 +254,7 @@ function renderSectionLine(){
 function renderProgressStat(){
   const dayNum = new Date().getDay() + 1;
   const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-  const todaysClasses = classesForDay(dayNum);
+  const todaysClasses = classesForDay(dayNum).filter(c => !c.isBreak);
   const doneCount = todaysClasses.filter(c => toMinutes(c.end) <= nowMin).length;
   const today = todayIso();
   const dueToday = state.tasks.filter(t => t.due === today && !t.done).length;
@@ -314,6 +390,7 @@ function renderTasks(){
 function classEntryEl(c, nowMin){
   const div = document.createElement('div');
   div.className = 'entry';
+  if(c.isBreak) div.classList.add('break-entry');
   div.style.borderLeftColor = c.color || '#C9A227';
   const today = new Date();
   const todayDayNum = today.getDay() + 1;
@@ -322,7 +399,7 @@ function classEntryEl(c, nowMin){
   if(isLive) div.classList.add('live-now');
   const iconHtml = c.icon
     ? (c.icon.startsWith('data:') ? `<img src="${c.icon}" alt="">` : c.icon)
-    : (c.name ? c.name.charAt(0).toUpperCase() : '?');
+    : (c.isBreak ? '☕' : (c.name ? c.name.charAt(0).toUpperCase() : '?'));
   div.innerHTML = `
     <div class="entry-icon" style="${c.icon ? '' : `background:${c.color || '#C9A227'}22; color:${c.color || '#C9A227'};`}">${iconHtml}</div>
     <div class="entry-body">
@@ -392,6 +469,7 @@ setInterval(() => {
   renderProgressStat();
   renderTodayClasses();
   if(document.getElementById('view-week').classList.contains('active')) renderWeekClasses();
+  checkNotifications();
 }, 30000);
 
 // ---------- Tabs (Today / Week / Tasks) ----------
@@ -539,6 +617,7 @@ document.querySelectorAll('#classColorPicker button').forEach(b => {
 classForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const id = document.getElementById('classIdInput').value;
+  const prior = id ? state.classes.find(c => c.id === id) : null;
   const data = {
     id: id || uid(),
     name: document.getElementById('classNameInput').value.trim(),
@@ -549,6 +628,7 @@ classForm.addEventListener('submit', (e) => {
     color: selectedClassColor,
     icon: selectedClassIcon
   };
+  if(prior && prior.isBreak) data.isBreak = true;
   if(data.days.length === 0){
     alert('Pick at least one day for this class.');
     return;
@@ -698,11 +778,6 @@ document.querySelectorAll('.modal-overlay').forEach(ov => {
 
 // ---------- Settings: backup, restore, offline status ----------
 
-document.getElementById('settingsBtn').addEventListener('click', () => {
-  syncSettingsUI();
-  document.getElementById('settingsModalOverlay').classList.add('open');
-});
-
 // ---- Appearance: accent color + background photo ----
 
 function syncSettingsUI(){
@@ -720,7 +795,85 @@ function syncSettingsUI(){
     preview.style.backgroundImage = '';
     preview.textContent = 'No custom background set';
   }
+
+  document.getElementById('notifyClassToggle').classList.toggle('on', !!s.notifyClass);
+  document.getElementById('notifyTaskToggle').classList.toggle('on', !!s.notifyTasks);
+  document.getElementById('notifyMinutesRow').classList.toggle('open', !!s.notifyClass);
+  document.getElementById('notifyMinutesInput').value = s.notifyMinutes || 10;
+
+  if(Notification && Notification.permission === 'denied'){
+    document.getElementById('notifyPermNote').textContent = 'Notifications are blocked for this site in your browser settings — enable them there first if you want reminders.';
+  }
 }
+
+document.getElementById('notifyClassToggle').addEventListener('click', async () => {
+  const turningOn = !state.settings.notifyClass;
+  if(turningOn && Notification.permission === 'default'){
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){ syncSettingsUI(); return; }
+  }
+  if(turningOn && Notification.permission === 'denied'){ syncSettingsUI(); return; }
+  state.settings.notifyClass = turningOn;
+  saveData();
+  syncSettingsUI();
+});
+
+document.getElementById('notifyTaskToggle').addEventListener('click', async () => {
+  const turningOn = !state.settings.notifyTasks;
+  if(turningOn && Notification.permission === 'default'){
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){ syncSettingsUI(); return; }
+  }
+  if(turningOn && Notification.permission === 'denied'){ syncSettingsUI(); return; }
+  state.settings.notifyTasks = turningOn;
+  saveData();
+  syncSettingsUI();
+});
+
+document.getElementById('notifyMinutesInput').addEventListener('change', (e) => {
+  state.settings.notifyMinutes = Number(e.target.value);
+  saveData();
+});
+
+// ---- Install app (explicit button, plus fallback if the browser never offers the prompt) ----
+
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installAppBtn').style.display = 'block';
+  document.getElementById('installedNote').style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  document.getElementById('installAppBtn').style.display = 'none';
+  document.getElementById('installedNote').style.display = 'block';
+});
+
+if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone){
+  document.getElementById('installedNote').style.display = 'block';
+}
+
+document.getElementById('installAppBtn').addEventListener('click', async () => {
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    if(choice.outcome === 'accepted'){
+      document.getElementById('installAppBtn').style.display = 'none';
+      document.getElementById('installedNote').style.display = 'block';
+    }
+    deferredInstallPrompt = null;
+  }else{
+    alert('Your browser hasn\'t offered an install prompt yet. Make sure you\'re in Chrome (not an in-app browser like Messenger/Instagram), then use the ⋮ menu → "Install app" or "Add to Home screen" instead.');
+  }
+});
+
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  syncSettingsUI();
+  document.getElementById('settingsModalOverlay').classList.add('open');
+});
 
 document.querySelectorAll('#accentPicker button').forEach(b => {
   b.addEventListener('click', () => {
