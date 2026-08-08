@@ -7,6 +7,13 @@ const DAY_LABELS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Fri
 
 // 11-ASSH LANGUAGE 1B, Group E2 (Afternoon Session), Adviser: Mr. Felix Reyes
 // Seeded from the user's class schedule. Days: Sun=1 ... Sat=7.
+// Bump this whenever SEED_CLASSES below is intentionally corrected (a typo'd
+// teacher name, a missing period, etc). Anyone who already has saved data
+// gets those specific fixes auto-applied on next load — no manual "Restore
+// original schedule" needed. Custom classes they added themselves are never
+// touched; only entries whose id still matches a seed-* id get refreshed.
+const SEED_VERSION = 2;
+
 const SEED_CLASSES = [
   { id:'seed-lcs',    name:'Life and Career Skills',   room:'Ms. Aica',      start:'15:30', end:'16:10', days:[2,3,4,5], color:'#6B8F5C' },
   { id:'seed-fil',     name:'Filipino 1',               room:'Ms. Shicka',    start:'16:10', end:'16:50', days:[2,3,4,5], color:'#5B7FBF' },
@@ -37,18 +44,31 @@ const DEFAULT_SETTINGS = {
   bgDim: 78
 };
 
+function migrateSeedClasses(classes){
+  const byId = Object.fromEntries(SEED_CLASSES.map(c => [c.id, c]));
+  return classes.map(c => {
+    const fresh = byId[c.id];
+    if(!fresh) return c; // not a seed class (user-created), leave alone
+    // keep any custom icon the user picked; refresh everything else
+    return { ...fresh, icon: c.icon || fresh.icon || '' };
+  });
+}
+
 function loadData(){
   try{
     const raw = localStorage.getItem(STORE_KEY);
-    if(!raw) return { classes: SEED_CLASSES.map(c => ({...c})), tasks: [], profile: {...DEFAULT_PROFILE}, settings: {...DEFAULT_SETTINGS} };
+    if(!raw) return { classes: SEED_CLASSES.map(c => ({...c})), tasks: [], profile: {...DEFAULT_PROFILE}, settings: {...DEFAULT_SETTINGS}, seedVersion: SEED_VERSION };
     const parsed = JSON.parse(raw);
-    const classes = (parsed.classes && parsed.classes.length) ? parsed.classes : SEED_CLASSES.map(c => ({...c}));
+    let classes = (parsed.classes && parsed.classes.length) ? parsed.classes : SEED_CLASSES.map(c => ({...c}));
+    if((parsed.seedVersion || 0) < SEED_VERSION){
+      classes = migrateSeedClasses(classes);
+    }
     const profile = parsed.profile ? { ...DEFAULT_PROFILE, ...parsed.profile } : {...DEFAULT_PROFILE};
     const settings = parsed.settings ? { ...DEFAULT_SETTINGS, ...parsed.settings } : {...DEFAULT_SETTINGS};
-    return { classes, tasks: parsed.tasks || [], profile, settings };
+    return { classes, tasks: parsed.tasks || [], profile, settings, seedVersion: SEED_VERSION };
   }catch(e){
     console.error('Failed to load data', e);
-    return { classes: SEED_CLASSES.map(c => ({...c})), tasks: [], profile: {...DEFAULT_PROFILE}, settings: {...DEFAULT_SETTINGS} };
+    return { classes: SEED_CLASSES.map(c => ({...c})), tasks: [], profile: {...DEFAULT_PROFILE}, settings: {...DEFAULT_SETTINGS}, seedVersion: SEED_VERSION };
   }
 }
 
@@ -57,6 +77,7 @@ function saveData(){
 }
 
 let state = loadData();
+saveData(); // persist seedVersion + any auto-applied schedule fixes right away
 let currentWeekDay = new Date().getDay() + 1; // 1=Sun ... 7=Sat, matches day-picker values
 let currentTaskFilter = 'open';
 
@@ -834,10 +855,11 @@ document.getElementById('importFileInput').addEventListener('change', (e) => {
       }
       if(!confirm('Import this backup? It will replace everything currently in JIN.')) return;
       state = {
-        classes: parsed.classes,
+        classes: migrateSeedClasses(parsed.classes),
         tasks: parsed.tasks,
         profile: parsed.profile ? { ...DEFAULT_PROFILE, ...parsed.profile } : {...DEFAULT_PROFILE},
-        settings: parsed.settings ? { ...DEFAULT_SETTINGS, ...parsed.settings } : {...DEFAULT_SETTINGS}
+        settings: parsed.settings ? { ...DEFAULT_SETTINGS, ...parsed.settings } : {...DEFAULT_SETTINGS},
+        seedVersion: SEED_VERSION
       };
       saveData();
       applyAppearance();
