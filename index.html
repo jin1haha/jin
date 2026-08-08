@@ -28,6 +28,16 @@
     </div>
   </header>
 
+  <div id="installBanner" class="install-banner" style="display:none;">
+    <button id="installBannerDismiss" class="install-banner-dismiss" aria-label="Dismiss">×</button>
+    <div class="install-banner-text">
+      <strong>Install JIN</strong>
+      <span>Opens like a real app — no browser bar, works offline.</span>
+    </div>
+    <button id="installAppBtn" class="install-banner-btn">Install</button>
+  </div>
+  <div id="installedNote" class="installed-note" style="display:none;">✓ Installed as an app</div>
+
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="today" role="tab">Today</button>
     <button class="tab" data-view="week" role="tab">Week</button>
@@ -220,9 +230,6 @@
       <button class="modal-close" data-close="settingsModalOverlay">×</button>
     </div>
     <p class="settings-note">JIN works fully offline — everything is saved on this device. Back up your data before clearing browser storage or switching phones.</p>
-
-    <button id="installAppBtn" class="install-btn">📲 Install JIN as an app</button>
-    <div id="installedNote" class="installed-note" style="display:none;">✓ Installed as an app</div>
 
     <div class="appearance-block">
       <h3>Notifications</h3>

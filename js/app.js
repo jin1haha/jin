@@ -835,33 +835,49 @@ document.getElementById('notifyMinutesInput').addEventListener('change', (e) => 
   saveData();
 });
 
-// ---- Install app (explicit button, plus fallback if the browser never offers the prompt) ----
+// ---- Install app (banner on the main screen, plus fallback if the browser never offers the prompt) ----
 
 let deferredInstallPrompt = null;
+
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function showInstalledNote(){
+  const note = document.getElementById('installedNote');
+  note.style.display = 'block';
+  setTimeout(() => { note.style.display = 'none'; }, 4000);
+}
+
+if(isStandalone()){
+  document.getElementById('installBanner').style.display = 'none';
+}else if(sessionStorage.getItem('jin_install_dismissed') !== '1'){
+  document.getElementById('installBanner').style.display = 'flex';
+}
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  document.getElementById('installedNote').style.display = 'none';
 });
 
 window.addEventListener('appinstalled', () => {
   deferredInstallPrompt = null;
-  document.getElementById('installAppBtn').style.display = 'none';
-  document.getElementById('installedNote').style.display = 'block';
+  document.getElementById('installBanner').style.display = 'none';
+  showInstalledNote();
 });
 
-if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone){
-  document.getElementById('installedNote').style.display = 'block';
-}
+document.getElementById('installBannerDismiss').addEventListener('click', () => {
+  document.getElementById('installBanner').style.display = 'none';
+  sessionStorage.setItem('jin_install_dismissed', '1');
+});
 
 document.getElementById('installAppBtn').addEventListener('click', async () => {
   if(deferredInstallPrompt){
     deferredInstallPrompt.prompt();
     const choice = await deferredInstallPrompt.userChoice;
     if(choice.outcome === 'accepted'){
-      document.getElementById('installAppBtn').style.display = 'none';
-      document.getElementById('installedNote').style.display = 'block';
+      document.getElementById('installBanner').style.display = 'none';
+      showInstalledNote();
     }
     deferredInstallPrompt = null;
   }else{
