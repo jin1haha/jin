@@ -842,7 +842,6 @@ let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  document.getElementById('installAppBtn').style.display = 'block';
   document.getElementById('installedNote').style.display = 'none';
 });
 
@@ -866,7 +865,12 @@ document.getElementById('installAppBtn').addEventListener('click', async () => {
     }
     deferredInstallPrompt = null;
   }else{
-    alert('Your browser hasn\'t offered an install prompt yet. Make sure you\'re in Chrome (not an in-app browser like Messenger/Instagram), then use the ⋮ menu → "Install app" or "Add to Home screen" instead.');
+    const reasons = [];
+    if(!('serviceWorker' in navigator)) reasons.push('this browser doesn\'t support service workers');
+    else if(!navigator.serviceWorker.controller) reasons.push('the service worker hasn\'t finished registering yet — try reloading the page once and wait a few seconds before tapping this again');
+    if(location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') reasons.push('the page isn\'t loaded over HTTPS');
+    const detail = reasons.length ? '\n\nPossible reason: ' + reasons[0] : '';
+    alert('Chrome hasn\'t offered its install prompt for this page yet.' + detail + '\n\nManual option: tap the ⋮ menu (top right of Chrome) → "Install app" or "Add to Home screen". If you\'re in an in-app browser (Messenger, Instagram, etc.), open the link in Chrome directly first.');
   }
 });
 
